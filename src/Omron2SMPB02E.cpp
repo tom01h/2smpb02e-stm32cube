@@ -43,13 +43,43 @@ Omron2SMPB02E::Omron2SMPB02E(I2C_HandleTypeDef * hi2c, uint8_t SDO = 1)
 void Omron2SMPB02E::begin()
 {
   write_reg(IO_SETUP, 0x00); // IO_SETUP
-  /*
-  uint32_t coe_b00_a0_ex = (uint32_t)read_reg(COE_b00_a0_ex);
-  a0 = ((uint32_t)read_reg(COE_a0_1) << 12) | ((uint32_t)read_reg(COE_a0_0) << 4) | ((uint32_t)coe_b00_a0_ex & 0x0000000f);
-  a0 = -(a0 & (uint32_t)1 << 19) + (a0 & ~((uint32_t)1 << 19)); // 2's complement
 
-  b00 =((uint32_t)read_reg(COE_b00_1) << 12) | ((uint32_t)read_reg(COE_b00_0) << 4) | (coe_b00_a0_ex >> 4);
-  */
+  // 補正用パラメータ
+  //
+  //   a0, b00 : OTP / 16
+  //     {19:12}   {11:4}    {3:0}
+  // a0  COE_a0_1  COE_a0_0  COE_a0_ex
+  // b00 COE_b00_1 COE_b00_0 COE_b00_ex
+  //
+  //   a1, ... : A + (S * OTP) / 32767
+  //        A        S        OTP
+  // a1    -6e-03    4.3e-04  [COE_a1_1,COE_a1_0]
+  // a2    -1.9e-11  1.2e-10  [COE_a2_1,COE_a2_0]
+  // bt1   1.0e-01   9.1e-02  [COE_bt1_1,COE_bt1_0]
+  // bt2   1.2e-8    1.2e-06  [COE_bt2_1,COE_bt2_0]
+  // bp1   3.3e-02   1.9e-02  [COE_bp1_1,COE_bp1_0]
+  // b11   2.1e-07   1.4e-07  [COE_b11_1,COE_b11_0]
+  // bp2   -6.3e-10  3.5e-10  [COE_bp2_1,COE_bp2_0]
+  // b12   2.9e-13   7.6e-13  [COE_b12_1,COE_b12_0]
+  // b21   2.1e-15   1.2e-14  [COE_b21_1,COE_b21_0]
+  // bp3   1.3e-16   7.9e-17  [COE_bp3_1,COE_bp3_0]
+
+  a0 = ((uint32_t)read_reg(COE_a0_1) << 12) | ((uint32_t)read_reg(COE_a0_0) << 4) | ((uint32_t)read_reg(COE_b00_a0_ex) & 0x0000000f);
+  a0 = -(a0 & (uint32_t)1 << 19) + (a0 & ~((uint32_t)1 << 19)); // 2's complement
+  a1 = A_a1 + read_reg16(COE_a1) * S_a1/32767.0;
+  a2 = A_a2 * read_reg16(COE_a2) * S_a2/32767.0;
+
+  b00 =((uint32_t)read_reg(COE_b00_1) << 12) | ((uint32_t)read_reg(COE_b00_0) << 4) | ((uint32_t)read_reg(COE_b00_a0_ex) >> 4);
+  b00 = -(b00 & (uint32_t)1 << 19) | (b00 & ~((uint32_t)1 << 19)); // 2's complement
+  bt1 = A_bt1 + read_reg16(COE_bt1) * S_bt1/32767.0;
+  b11 = A_b11 + read_reg16(COE_b11) * S_b11/32767.0;
+  bt2 = A_bt2 + read_reg16(COE_bt2) * S_bt2/32767.0;
+  b12 = A_b12 + read_reg16(COE_b12) * S_b12/32767.0;
+  bp1 = A_bp1 + read_reg16(COE_bp1) * S_bp1/32767.0;
+  bp2 = A_bp2 + read_reg16(COE_bp2) * S_bp2/32767.0;
+  b21 = A_b21 + read_reg16(COE_b21) * S_b21/32767.0;
+  bp3 = A_bp3 + read_reg16(COE_bp3) * S_bp3/32767.0;
+  
   set_average(AVG_1, AVG_1);
 
 }
@@ -91,30 +121,8 @@ float Omron2SMPB02E::read_calc_temp()
   // -> temp = Re / 256 [degC]
   //   Dt : raw temperature value from TEMP_TXDx reg.
 
-  //   a0, b00 : OTP / 16
-  //     {19:12}   {11:4}    {3:0}
-  // a0  COE_a0_1  COE_a0_0  COE_a0_ex
-  // b00 COE_b00_1 COE_b00_0 COE_b00_ex
-
-  //   a1, ... : A + (S * OTP) / 32767
-  //        A        S        OTP
-  // a1    -6e-03    4.3e-04  [COE_a1_1,COE_a1_0]
-  // a2    -1.9e-11  1.2e-10  [COE_a2_1,COE_a2_0]
-  // bt1   1.0e-01   9.1e-02  [COE_bt1_1,COE_bt1_0]
-  // bt2   1.2e-8    1.2e-06  [COE_bt2_1,COE_bt2_0]
-  // bp1   3.3e-02   1.9e-02  [COE_bp1_1,COE_bp1_0]
-  // b11   2.1e-07   1.4e-07  [COE_b11_1,COE_b11_0]
-  // bp2   -6.3e-10  3.5e-10  [COE_bp2_1,COE_bp2_0]
-  // b12   2.9e-13   7.6e-13  [COE_b12_1,COE_b12_0]
-  // b21   2.1e-15   1.2e-14  [COE_b21_1,COE_b21_0]
-  // bp3   1.3e-16   7.9e-17  [COE_bp3_1,COE_bp3_0]
-
   float dt = read_raw_temp();
-  long a0;
-  a0 = ((uint32_t)read_reg(COE_a0_1) << 12) | ((uint32_t)read_reg(COE_a0_0) << 4) | ((uint32_t)read_reg(COE_b00_a0_ex) & 0x0000000f);
-  a0 = -(a0 & (uint32_t)1 << 19) + (a0 & ~((uint32_t)1 << 19)); // 2's complement
-
-  float temp = a0/16.0 + ((A_a1 + read_reg16(COE_a1) * S_a1/32767.0) + (A_a2 * read_reg16(COE_a2) * S_a2/32767.0) * dt) * dt;
+  float temp = a0/16.0 + (a1 + a2 * dt) * dt;
   return(temp);
 }
 
@@ -126,37 +134,19 @@ float Omron2SMPB02E::read_pressure()
   //   Tr : raw temperature from TEMP_TXDx reg.
   //   Dp : raw pressure from PRESS_TXDx reg.
   float prs;
-  long b00 =((uint32_t)read_reg(COE_b00_1) << 12) | ((uint32_t)read_reg(COE_b00_0) << 4) | ((uint32_t)read_reg(COE_b00_a0_ex) >> 4);
-  b00 = -(b00 & (uint32_t)1 << 19) | (b00 & ~((uint32_t)1 << 19)); // 2's complement
 
   float dp = read_raw_pressure();
   float tr = read_calc_temp();
-  /*
-  Pr = b00
-    + (bt1 * Tr)
-    + (b11 * Dp * Tr)
-    + (bt2 * Tr^2)
-    + (b12 * Dp * Tr^2)
-    + (bp1 * Dp)
-    + (bp2 * Dp^2)
-    + (b21 * Dp^2 * Tr)
-    + (bp3 * Dp^3)
-  pressure = Bb00
-    + Btr * (Bbt1 + Bb11 * Bdp + Btr * (Bbt2 + Bb12 * Bdp))
-    + Bdp * (Bbp1 + Bdp * (Bbp2 + Bb21 * Btr + Bbp3 * Bdp));
-  */
+
   float w;
   float w2;
+  // Pr = b00 + {(bt1) + (b11 * Dp) + (bt2 * Tr) + (b12 * Dp * Tr)} * Tr
+  //      + [(bp1) + {(bp2) + (b21 * Tr) + (bp3 * Dp)} * Dp] * Dp
   prs = b00/16.0;
-  w  =   A_bt1 + read_reg16(COE_bt1) * S_bt1/32767.0;
-  w +=  (A_b11 + read_reg16(COE_b11) * S_b11/32767.0) * dp;
-  w += tr * ((A_bt2 + read_reg16(COE_bt2) * S_bt2/32767.0)
-	          +(A_b12 + read_reg16(COE_b12) * S_b12/32767.0) * dp);
+  w  =  bt1 + b11 * dp + tr * (bt2 + b12 * dp);
   prs += tr * w;
-  w = A_bp1 + read_reg16(COE_bp1) * S_bp1/32767.0;
-  w2 = A_bp2 + read_reg16(COE_bp2) * S_bp2/32767.0;
-  w2 += (A_b21 + read_reg16(COE_b21) * S_b21/32767.0) * tr;
-  w2 += (A_bp3 + read_reg16(COE_bp3) * S_bp3/32767.0) * dp;
+  w = bp1;
+  w2 = bp2 + b21 * tr + bp3 * dp;
   w += dp * w2;
   prs += dp * w;
   

@@ -112,6 +112,15 @@ class Omron2SMPB02E
   // calibration coefficients
   I2C_HandleTypeDef * i2c_ch;
   uint8_t i2c_addr = 0x56; // SDO=1 / 0x70@SDO=0
+
+  // 補正用パラメータ
+  long a0;
+  float a1, a2;
+  long b00;
+  float bt1, b11, bt2, b12, bp1, bp2, b21, bp3;
+
+  float height;
+  
   uint8_t read_reg(uint8_t);
   void write_reg(uint8_t, uint8_t);
   int read_reg16(uint8_t); // read {(@addr):(@addr+1)}, 2's complement
