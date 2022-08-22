@@ -1,29 +1,21 @@
-# 2smpb02e-grove-arduino
-This library is for evaluating Omron sensor 2SMPB-02E with Arduino UNO.  
+# 2smpb02e-st32cube
 
-2SMPB-02E is a compact MEMS absolute pressure sensor with high accuracy and low current consumption.  
-Built-in 24-bit ADC with low noise, it can measure atmospheric pressure with high accuracy.  
-Control and output are digital methods via the I2C/SPI interface, which realizes low current consumption by automatic sleep mode.
+オムロン製センサ 2SMPB-02E を STM32CubeIDE で評価する為のライブラリです。  
+[Arduino向けライブラリ](https://github.com/omron-devhub/2smpb02e-grove-arduino) をもとに変更しています。
 
-## language
-- [English](./README.md)
-- [Japanase](./README_ja.md)
+2SMPB-02E は高精度・低消費電流の小型MEMS絶対圧センサです。  
+低ノイズの24bit ADCを内蔵し、気圧を高精度に測定することができます。  
+制御と出力は I2C/SPI インターフェースを通じたデジタル方式で、自動スリープモードによる低消費電流を実現しています。
 
-## Instration
-Installation this library on Arduino IDE.
-1. Download ".zip" from this repository.
-2. Install from Arduino IDE's Sketch -> Library -> install from zip.
+## 変更元のREADME
 
-## How to use
-see examples/sample.ino
+- [英語](./OMRON_README.md)
+- [日本語](./OMRON_README_ja.md)
 
-## Contributors
-[@akita11](https://github.com/akita11) has contributed as the basis of this project.  
+## 使い方
 
-and more [contributors](https://github.com/omron-devhub/d6t-grove-arduino/graphs/contributors) .  
-Thank you to all our contributors!
+`examples/sample/main_cpp.cpp` を参照してください。
 
-## Licence
-The files (number.c, number.h and bcconfig.h) from the "bc" program included in this repository are licensed under the GPL license.
+## ライセンス
 
-Other files are licensed under the MIT license.
+MITライセンスの下でライセンスされます。

@@ -1,16 +1,12 @@
 // Arduion Library for Omron 2SMPB02E
 // 2019/1/16: akita11 (akita@ifdl.jp)
+// Change to STM32Cube Library
+// 2022/8/21: tom01h
+
+#include "main.h"
 
 #ifndef Omron2SMPB02E_h
 #define Omron2SMPB02E_h
-
-#include "BigNumber.h"
-
-#include "Arduino.h"
-
-#define MODE_SLEEP  0
-#define MODE_FORCE  1
-#define MODE_NORMAL 2
 
 // registers
 #define TEMP_TXD0 0xfc
@@ -89,52 +85,49 @@
 #define FILTER_32  0x5
 
 // conversion coefficients
-#define A_a1 "-0.0063"
-#define S_a1 "0.00043"
-#define A_a2 "-0.000000000019"
-#define S_a2 "0.00000000012"
-#define A_bt1	"0.100000000000000000"
-#define S_bt1	"0.091000000000000000"
-#define A_bt2	"0.000000012000000000"
-#define S_bt2	"0.000001200000000000"
-#define A_bp1	"0.033000000000000000"
-#define S_bp1	"0.019000000000000000"
-#define A_b11	"0.000000210000000000"
-#define S_b11	"0.000000140000000000"
-#define A_bp2	"-0.000000000630000000"
-#define S_bp2	"0.000000000350000000"
-#define A_b12	"0.000000000000290000"
-#define S_b12	"0.000000000000760000"
-#define A_b21	"0.000000000000002100"
-#define S_b21	"0.000000000000012000"
-#define A_bp3	"0.000000000000000130"
-#define S_bp3	"0.000000000000000079"
+#define A_a1 -0.0063
+#define S_a1 0.00043
+#define A_a2 -0.000000000019
+#define S_a2 0.00000000012
+#define A_bt1 0.100000000000000000
+#define S_bt1 0.091000000000000000
+#define A_bt2	0.000000012000000000
+#define S_bt2	0.000001200000000000
+#define A_bp1	0.033000000000000000
+#define S_bp1	0.019000000000000000
+#define A_b11	0.000000210000000000
+#define S_b11	0.000000140000000000
+#define A_bp2	-0.000000000630000000
+#define S_bp2	0.000000000350000000
+#define A_b12	0.000000000000290000
+#define S_b12	0.000000000000760000
+#define A_b21	0.000000000000002100
+#define S_b21	0.000000000000012000
+#define A_bp3	0.000000000000000130
+#define S_bp3	0.000000000000000079
 
 class Omron2SMPB02E
 {
  private:
   // calibration coefficients
+  I2C_HandleTypeDef * i2c_ch;
   uint8_t i2c_addr = 0x56; // SDO=1 / 0x70@SDO=0
-  uint8_t read_reg(uint8_t addr);
-  void write_reg(uint8_t addr, uint8_t data);
-  int read_reg16(uint8_t addr); // read {(@addr):(@addr+1)}, 2's complement
+  uint8_t read_reg(uint8_t);
+  void write_reg(uint8_t, uint8_t);
+  int read_reg16(uint8_t); // read {(@addr):(@addr+1)}, 2's complement
   long read_raw_temp();
-  BigNumber read_calc_temp();
+  float read_calc_temp();
   long read_raw_pressure();
-  BigNumber conv_K0(int x, BigNumber a, BigNumber s);
-  BigNumber conv_K1(long x);
   
  public:
-  Omron2SMPB02E(uint8_t SDO = 1);
+  Omron2SMPB02E(I2C_HandleTypeDef *, uint8_t);
   void begin();
-  //  BigNumber read_temp(); // [degC]
-  //  BigNumber read_pressure(); // [Pa]
   float read_temp(); // [degC]
   float read_pressure(); // [Pa]
-  void set_mode(uint8_t mode); // MODE_{SLEEP,FORCE,NORMAL}
+  void set_mode(uint8_t); // MODE_{SLEEP,FORCE,NORMAL}
   uint8_t read_id();
   void reset();
-  void set_average(uint8_t temp_avg, uint8_t pressure_avg);
+  void set_average(uint8_t, uint8_t);
   uint8_t is_busy();
   void set_filter(uint8_t mode);
 };
