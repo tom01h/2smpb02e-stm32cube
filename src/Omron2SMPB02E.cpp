@@ -96,38 +96,61 @@ void Omron2SMPB02E::reset()
 
 long Omron2SMPB02E::read_raw_temp()
 {
-  return((((uint32_t)read_reg(TEMP_TXD2) << 16)
+  raw_temp = ((((uint32_t)read_reg(TEMP_TXD2) << 16)
 	  | ((uint32_t)read_reg(TEMP_TXD1) <<  8)
 	  | ((uint32_t)read_reg(TEMP_TXD0)      )) - ((uint32_t)1 << 23));
+  return(raw_temp);
 }
 
 long Omron2SMPB02E::read_raw_pressure()
 {
-  return((((uint32_t)read_reg(PRESS_TXD2) << 16)
+  raw_pressure = ((((uint32_t)read_reg(PRESS_TXD2) << 16)
 	  | ((uint32_t)read_reg(PRESS_TXD1) <<  8)
 	  | ((uint32_t)read_reg(PRESS_TXD0)      )) - ((uint32_t)1 << 23));
+  return(raw_pressure);
 }
 
 // read temperature in [degC]
-float Omron2SMPB02E::read_temp()
+float Omron2SMPB02E::get_temp()
 {
-  float t = read_calc_temp() / 256.0;
+  float t = calc_temp() / 256.0;
   return(t);
 }
 
-float Omron2SMPB02E::read_calc_temp()
+float Omron2SMPB02E::read_temp()
+{
+  read_raw_temp();
+  float t = calc_temp() / 256.0;
+  return(t);
+}
+
+float Omron2SMPB02E::calc_temp()
 {
   // Tr = a0 + a1 * Dt + a2 * Dt^2 
   // -> temp = Re / 256 [degC]
   //   Dt : raw temperature value from TEMP_TXDx reg.
 
-  float dt = read_raw_temp();
+  float dt = raw_temp;
   float temp = a0/16.0 + (a1 + a2 * dt) * dt;
   return(temp);
 }
 
 // read pressure in [Pa]
+float Omron2SMPB02E::get_pressure()
+{
+  float prs = calc_pressure() / 100.0;
+  return(prs);
+}
+
 float Omron2SMPB02E::read_pressure()
+{
+  read_raw_temp();
+  read_raw_pressure();
+  float prs = calc_pressure() / 100.0;
+  return(prs);
+}
+
+float Omron2SMPB02E::calc_pressure()
 {
   // Pr = b00 + (bt1 * Tr) + (bp1 * Dp) + (b11 * Dp * Tr) + (bt2 * Tr^2)
   //      + (bp2 * Dp^2) + (b12 * Dp * Tr^2) + (b21 * Dp^2 * Tr) + (bp3 * Dp^3)
@@ -135,8 +158,8 @@ float Omron2SMPB02E::read_pressure()
   //   Dp : raw pressure from PRESS_TXDx reg.
   float prs;
 
-  float dp = read_raw_pressure();
-  float tr = read_calc_temp();
+  float dp = raw_pressure;
+  float tr = calc_temp();
 
   float w;
   float w2;
@@ -150,14 +173,32 @@ float Omron2SMPB02E::read_pressure()
   w += dp * w2;
   prs += dp * w;
   
-  float P0 = 1013.25;
-  height = (powf((P0 / (prs / 100.0)), 1.0 / 5.256) -1) * (tr/256.0 + 273.15) / 0.0065;
-  
-  return(prs / 100.0);
+  return(prs);
+}
+
+// read height in [m]
+float Omron2SMPB02E::get_height()
+{
+  float height = calc_height();
+  return(height);
 }
 
 float Omron2SMPB02E::read_height()
 {
+  read_raw_temp();
+  read_raw_pressure();
+  float height = calc_height();
+  return(height);
+}
+
+float Omron2SMPB02E::calc_height()
+{
+  float prs = calc_pressure();
+  float tr = calc_temp();
+  
+  float P0 = 1013.25;
+  float height = (powf((P0 / (prs / 100.0)), 1.0 / 5.256) -1) * (tr/256.0 + 273.15) / 0.0065;
+  
   return(height);
 }
 
