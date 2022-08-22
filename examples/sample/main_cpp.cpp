@@ -23,7 +23,11 @@ extern "C" void main_cpp(I2C_HandleTypeDef * hi2c1)
         CDC_Transmit_FS(buffer,strlen((char *)buffer));
 
         float press = prs.read_pressure();
-        sprintf((char *)buffer, "pressure: %8.2f hP\r\n", press);
+        sprintf((char *)buffer, "pressure: %8.2f hP\t", press);
+        CDC_Transmit_FS(buffer,strlen((char *)buffer));
+
+        float height = prs.read_height();
+        sprintf((char *)buffer, "height: %6.2f m\r\n", height);
         CDC_Transmit_FS(buffer,strlen((char *)buffer));
 
 	    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);

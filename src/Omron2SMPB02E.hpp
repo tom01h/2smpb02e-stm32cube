@@ -124,6 +124,7 @@ class Omron2SMPB02E
   void begin();
   float read_temp(); // [degC]
   float read_pressure(); // [Pa]
+  float read_height(); // [m]
   void set_mode(uint8_t); // MODE_{SLEEP,FORCE,NORMAL}
   uint8_t read_id();
   void reset();

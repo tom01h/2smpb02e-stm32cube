@@ -5,6 +5,7 @@
 
 #include "Omron2SMPB02E.hpp"
 
+#include <math.h>
 #include "main.h"
 
 uint8_t Omron2SMPB02E::read_reg(uint8_t addr)
@@ -159,7 +160,15 @@ float Omron2SMPB02E::read_pressure()
   w += dp * w2;
   prs += dp * w;
   
+  float P0 = 1013.25;
+  height = (powf((P0 / (prs / 100.0)), 1.0 / 5.256) -1) * (tr/256.0 + 273.15) / 0.0065;
+  
   return(prs / 100.0);
+}
+
+float Omron2SMPB02E::read_height()
+{
+  return(height);
 }
 
 void Omron2SMPB02E::set_average(uint8_t temp_avg, uint8_t pressure_avg)
