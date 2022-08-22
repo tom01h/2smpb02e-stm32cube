@@ -125,8 +125,8 @@ class Omron2SMPB02E
   uint8_t read_reg(uint8_t);
   void write_reg(uint8_t, uint8_t);
   int read_reg16(uint8_t); // read {(@addr):(@addr+1)}, 2's complement
-  long read_raw_temp();
-  long read_raw_pressure();
+  void read_raw_temp();
+  void read_raw_pressure();
   float calc_temp();
   float calc_pressure();
   float calc_height();
@@ -134,6 +134,7 @@ class Omron2SMPB02E
  public:
   Omron2SMPB02E(I2C_HandleTypeDef *, uint8_t);
   void begin();
+  void read_sensor();
   float get_temp(); // [degC]
   float get_pressure(); // [Pa]
   float get_height(); // [m]

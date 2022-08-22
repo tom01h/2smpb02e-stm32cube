@@ -94,20 +94,24 @@ void Omron2SMPB02E::reset()
   write_reg(RESET, 0xe6); // software reset
 }
 
-long Omron2SMPB02E::read_raw_temp()
+void Omron2SMPB02E::read_sensor()
+{
+  read_raw_temp();
+  read_raw_pressure();
+}
+  
+void Omron2SMPB02E::read_raw_temp()
 {
   raw_temp = ((((uint32_t)read_reg(TEMP_TXD2) << 16)
 	  | ((uint32_t)read_reg(TEMP_TXD1) <<  8)
 	  | ((uint32_t)read_reg(TEMP_TXD0)      )) - ((uint32_t)1 << 23));
-  return(raw_temp);
 }
 
-long Omron2SMPB02E::read_raw_pressure()
+void Omron2SMPB02E::read_raw_pressure()
 {
   raw_pressure = ((((uint32_t)read_reg(PRESS_TXD2) << 16)
 	  | ((uint32_t)read_reg(PRESS_TXD1) <<  8)
 	  | ((uint32_t)read_reg(PRESS_TXD0)      )) - ((uint32_t)1 << 23));
-  return(raw_pressure);
 }
 
 // read temperature in [degC]

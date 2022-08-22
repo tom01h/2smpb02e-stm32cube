@@ -18,9 +18,10 @@ extern "C" void main_cpp(I2C_HandleTypeDef * hi2c1)
     prs.set_filter(FILTER_8);
 
     while( 1 ){
-        float height = prs.read_height();
+        prs.read_sensor();
         float temp = prs.get_temp();
         float press = prs.get_pressure();
+        float height = prs.get_height();
 
         sprintf((char *)buffer, "temperature: %5.2f C\tpressure: %7.2f hP\theight: %6.2f m\r\n", temp, press, height);
         CDC_Transmit_FS(buffer,strlen((char *)buffer));
